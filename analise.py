@@ -1,45 +1,57 @@
 import spacy
 from collections import Counter
 import json
+from nltk.corpus import wordnet as wn
+
+
+def obter_sinonimos_sugeridos(palavra: str) -> str:
+    """
+    Tenta obter sinônimos via WordNet (para demonstrar inteligência semântica).
+    Se não encontrar no WordNet (comum em PT), retorna ao dicionário estático.
+    """
+    sinonimos_encontrados = set()
+
+    for synset in wn.synsets(palavra, lang='por'):
+        for lemma in synset.lemmas('por'):
+            sinonimo = lemma.name().replace('_', ' ')
+            if sinonimo.lower() != palavra.lower():
+                sinonimos_encontrados.add(sinonimo)
+
+    sugestoes_dinamicas = list(sinonimos_encontrados)[:3]
+
+    if sugestoes_dinamicas:
+        return ", ".join(sugestoes_dinamicas)
+    sinonimos_estaticos = {
+        'sustentabilidade': ['ecologia', 'preservação', 'conservação', 'perenidade'],
+        'crucial': ['vital', 'essencial', 'chave', 'fundamental'],
+        'futuro': ['porvir', 'destino', 'amanhã', 'prospecto'],
+        'ação': ['medidas', 'iniciativas', 'providências', 'atitudes'],
+        'requer': ['necessita', 'exige', 'demanda', 'pede'],
+        'sociedade': ['comunidade', 'coletividade', 'povo', 'nação'],
+        'melhorar': ['aprimorar', 'otimizar', 'aperfeiçoar', 'elevar'],
+        'sistema': ['estrutura', 'mecanismo', 'modelo', 'arcabouço']
+    }
+
+    sugestoes_estaticas = sinonimos_estaticos.get(palavra.lower(), [])
+
+    if sugestoes_estaticas:
+        return ", ".join(sugestoes_estaticas[:3])
+
+    return "N/A - Sem sugestões no léxico."
+
 
 try:
     NLP = spacy.load("pt_core_news_sm")
     STOP_WORDS_EXTRA = {"hoje", "pra", "ta",
                         "vou", "ser", "ter", "ir", "fazer", "dar"}
 except OSError:
-    print("ERRO: O modelo 'pt_core_news_sm' não foi encontrado. Execute o comando de download novamente.")
+    print("ERRO: O modelo 'pt_core_news_sm' não foi encontrado.")
     NLP = None
-
-
-def obter_sinonimos_sugeridos(palavra: str) -> str:
-    """
-    Função de Dicionário (Placeholder) para Sinônimos.
-    Simula um léxico para fornecer sugestões relevantes de vocabulário.
-    """
-    # Dicionário robusto de sinônimos relevantes
-    sinonimos = {
-        'sustentabilidade': ['ecologia', 'preservação', 'conservação', 'perenidade'],
-        'crucial': ['vital', 'essencial', 'chave', 'fundamental'],
-        'futuro': ['porvir', 'destino', 'amanhã', 'prospecto'],
-        # Nota: O lema é 'ação'
-        'ação': ['medidas', 'iniciativas', 'providências', 'atitudes'],
-        'requer': ['necessita', 'exige', 'demanda', 'pede'],
-        'melhorar': ['aprimorar', 'otimizar', 'aperfeiçoar', 'elevar'],
-        'sistema': ['estrutura', 'mecanismo', 'modelo', 'arcabouço']
-    }
-
-    sugestoes = sinonimos.get(palavra.lower(), [])
-
-    if not sugestoes:
-        return "N/A - Sugestões de vocabulário"
-
-    return ", ".join(sugestoes[:3])
 
 
 def analisar_texto(texto_entrada: str) -> list:
     """
-    Processa o texto usando spaCy para lematização e contagem de frequência,
-    filtrando palavras vazias (stop words).
+    Processa o texto usando spaCy para lematização e contagem de frequência.
     """
     if not NLP:
         return []
@@ -94,14 +106,13 @@ def formatar_tabela(resultados: list) -> str:
     return tabela
 
 
-# --- Bloco de Teste ---
 if __name__ == '__main__':
-    texto_exemplo = "A sustentabilidade é crucial para o futuro. Sustentabilidade requer ações práticas hoje. Nós fazemos as ações para melhorar o sistema, pois ele é vital para o futuro."
+    texto_teste_semantico = "As grandes ações que a sociedade realiza são cruciais para um futuro melhor. A sociedade necessita de ações para garantir a sustentabilidade. Tais ações requerem decisões cruciais hoje para o futuro que queremos."
 
-    print("--- 📚 Teste do SYNSYS Core (analise.py) ---")
-    print(f"Texto de Entrada: '{texto_exemplo}'\n")
+    print("--- Teste do SYNSYS Core (analise.py) com WordNet ---")
+    print(f"Texto de Entrada: '{texto_teste_semantico}'\n")
 
-    ranking = analisar_texto(texto_exemplo)
+    ranking = analisar_texto(texto_teste_semantico)
 
     tabela_saida = formatar_tabela(ranking)
     print(tabela_saida)
