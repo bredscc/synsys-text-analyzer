@@ -4,10 +4,7 @@ from analise import analisar_texto
 
 app = Flask(__name__)
 
-# Configuração de CORS (Cross-Origin Resource Sharing)
-# Isto é CRUCIAL para que meu site (brecketline.me) possa se comunicar com esta API.
 CORS(app)
-
 
 @app.route('/analisar', methods=['POST'])
 def api_analisar():

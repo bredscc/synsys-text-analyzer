@@ -104,7 +104,7 @@ def formatar_tabela(resultados: list) -> str:
 if __name__ == '__main__':
     texto_teste_semantico = "As grandes ações que a sociedade realiza são cruciais para um futuro melhor. A sociedade necessita de ações para garantir a sustentabilidade. Tais ações requerem decisões cruciais hoje para o futuro que queremos."
 
-    print("--- 📚 Teste do SYNSYS Core (analise.py) com WordNet ---")
+    print("--- Teste do SYNSYS Core (analise.py) com WordNet ---")
     print(f"Texto de Entrada: '{texto_teste_semantico}'\n")
 
     ranking = analisar_texto(texto_teste_semantico)
