@@ -1,7 +1,14 @@
 import spacy
 from collections import Counter
 import json
+import nltk
 from nltk.corpus import wordnet as wn
+
+try:
+    wn.synsets('teste', lang='por')
+except LookupError:
+    print("Aviso: Baixando NLTK omw-1.4. (Apenas no primeiro deploy/run).")
+    nltk.download('omw-1.4')
 
 try:
     NLP = spacy.load("pt_core_news_sm")
@@ -14,20 +21,23 @@ except OSError:
 
 def obter_sinonimos_sugeridos(palavra: str) -> str:
     """
-    Tenta obter sinônimos via WordNet (Inteligência Semântica).
-    Se não encontrar no WordNet (comum em PT), retorna ao dicionário estático (Fallback).
+    Tenta obter sinônimos via WordNet (Inteligência Semântica Dinâmica).
+    Se não encontrar, retorna ao dicionário estático (Fallback de Alta Qualidade).
     """
+    palavra_limpa = palavra.lower()
     sinonimos_encontrados = set()
-    for synset in wn.synsets(palavra, lang='por'):
+
+    for synset in wn.synsets(palavra_limpa, lang='por'):
         for lemma in synset.lemmas('por'):
             sinonimo = lemma.name().replace('_', ' ')
-            if sinonimo.lower() != palavra.lower() and len(sinonimo) > 2:
+            if sinonimo.lower() != palavra_limpa and len(sinonimo) > 2:
                 sinonimos_encontrados.add(sinonimo)
 
     sugestoes_dinamicas = list(sinonimos_encontrados)[:3]
 
     if sugestoes_dinamicas:
         return ", ".join(sugestoes_dinamicas)
+
     sinonimos_estaticos = {
         'sustentabilidade': ['ecologia', 'preservação', 'conservação', 'perenidade'],
         'crucial': ['vital', 'essencial', 'chave', 'fundamental'],
@@ -40,7 +50,7 @@ def obter_sinonimos_sugeridos(palavra: str) -> str:
         'projeto': ['plano', 'empreendimento', 'esquema', 'desígnio']
     }
 
-    sugestoes_estaticas = sinonimos_estaticos.get(palavra.lower(), [])
+    sugestoes_estaticas = sinonimos_estaticos.get(palavra_limpa, [])
 
     if sugestoes_estaticas:
         return ", ".join(sugestoes_estaticas[:3])
@@ -49,6 +59,9 @@ def obter_sinonimos_sugeridos(palavra: str) -> str:
 
 
 def analisar_texto(texto_entrada: str) -> list:
+    """
+    Processa o texto usando spaCy para lematização e contagem de frequência.
+    """
     if not NLP:
         return []
 
@@ -69,6 +82,7 @@ def analisar_texto(texto_entrada: str) -> list:
             palavras_lematizadas.append(token.lemma_.lower())
 
     frequencias = Counter(palavras_lematizadas)
+
     palavras_repetidas = {palavra: freq for palavra,
                           freq in frequencias.items() if freq > 1}
 
@@ -102,9 +116,9 @@ def formatar_tabela(resultados: list) -> str:
 
 
 if __name__ == '__main__':
-    texto_teste_semantico = "As grandes ações que a sociedade realiza são cruciais para um futuro melhor. A sociedade necessita de ações para garantir a sustentabilidade. Tais ações requerem decisões cruciais hoje para o futuro que queremos."
+    texto_teste_semantico = "O projeto atual requer nossa atenção. O projeto deve ser rápido. O tempo é crucial para o projeto."
 
-    print("--- Teste do SYNSYS Core (analise.py) com WordNet ---")
+    print("--- 📚 Teste do SYNSYS Core (analise.py) com NLTK/Fallback ---")
     print(f"Texto de Entrada: '{texto_teste_semantico}'\n")
 
     ranking = analisar_texto(texto_teste_semantico)
